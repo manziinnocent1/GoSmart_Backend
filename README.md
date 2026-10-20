@@ -27,6 +27,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 cp .env.example .env
+# Create the PostgreSQL role and database (see PostgreSQL below).
+createuser --pwprompt gosmart
+createdb --owner=gosmart gosmart
+# Set DATABASE_URL in .env to use the password entered above.
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py seed_demo
@@ -34,9 +38,24 @@ python manage.py runserver
 ```
 
 The API is under `/api/v1/`. Django admin is under `/django-admin/`.
-The default database is SQLite for local development. Set `DATABASE_URL` to a
-PostgreSQL URL for a deployed environment. Set a strong `DJANGO_SECRET_KEY`,
-`DJANGO_DEBUG=false`, and explicit hosts/origins before deployment.
+Interactive Swagger documentation is available at `/api/docs/`, and the
+OpenAPI schema is at `/api/schema/`. Use the **Authorize** button in Swagger
+and enter a JWT access token to try authenticated endpoints. Endpoints are
+grouped by app in separate Swagger sections.
+
+### PostgreSQL
+
+The backend uses PostgreSQL when `DATABASE_URL` is a PostgreSQL connection URL.
+The example `.env` configures a local database named `gosmart`; create the role
+and database using the commands in Local setup, or create them with your
+PostgreSQL administration tool. In `backend/.env`, replace the example
+password in `DATABASE_URL` with the password you set; its format is
+`postgresql://gosmart:<password>@localhost:5432/gosmart`.
+
+The database driver and URL parser are included in `requirements.txt`. If
+`DATABASE_URL` is unset, settings retain SQLite as a development fallback. Set
+a strong `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, and explicit hosts/origins
+before deployment.
 
 ### Mobile app connection and languages
 

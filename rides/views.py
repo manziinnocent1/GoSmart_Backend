@@ -2,6 +2,8 @@
 from django.db import IntegrityError
 from django.db.models import Avg
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
@@ -26,6 +28,10 @@ from .serializers import (
 from core.exceptions import Conflict
 
 class FareQuoteView(APIView):
+    @extend_schema(
+        request=FareQuoteInputSerializer,
+        responses=OpenApiTypes.OBJECT,
+    )
     def post(self, request):
         serializer = FareQuoteInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -4,6 +4,8 @@ import json
 
 from django.conf import settings
 from django.db import transaction
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -43,6 +45,10 @@ class PaymentProviderCallbackView(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = ()
 
+    @extend_schema(
+        request=OpenApiTypes.OBJECT,
+        responses=OpenApiTypes.OBJECT,
+    )
     def post(self, request):
         signature = request.headers.get("X-GoSmart-Signature", "")
         expected = hmac.new(settings.MOMO_WEBHOOK_SECRET.encode(), request.body, hashlib.sha256).hexdigest()

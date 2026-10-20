@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
+    "drf_spectacular",
     "core.apps.CoreConfig",
     "accounts.apps.AccountsConfig",
     "drivers.apps.DriversConfig",
@@ -72,11 +73,14 @@ WSGI_APPLICATION = "gosmart_backend.wsgi.application"
 ASGI_APPLICATION = "gosmart_backend.asgi.application"
 
 DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'gosmart',
+        'USER': 'manziinnocent',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 AUTH_USER_MODEL = "accounts.User"
@@ -109,6 +113,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "core.exceptions.localized_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -127,6 +132,41 @@ REST_FRAMEWORK = {
         "auth": "10/hour",
         "otp": "5/hour",
     },
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "GoSmart API",
+    "DESCRIPTION": "API for the GoSmart passenger, driver, and operations apps.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {
+            "name": "Core",
+            "description": "Health, language, saved-place, and emergency-alert endpoints.",
+        },
+        {
+            "name": "Accounts",
+            "description": "Registration, authentication, profile, and phone-verification endpoints.",
+        },
+        {"name": "Rides", "description": "Fare quotes and ride endpoints."},
+        {
+            "name": "Payments",
+            "description": "Payment-method and payment-provider callback endpoints.",
+        },
+        {
+            "name": "Drivers",
+            "description": "Driver profile, request, document, preference, earnings, and cashout endpoints.",
+        },
+        {"name": "Support", "description": "Support ticket and message endpoints."},
+        {
+            "name": "Operations",
+            "description": "Administrative dashboard, driver, pricing, surge-zone, and support endpoints.",
+        },
+    ],
+    "POSTPROCESSING_HOOKS": [
+        "gosmart_backend.schema.tag_endpoints_by_app",
+        "drf_spectacular.hooks.postprocess_schema_enums",
+    ],
 }
 
 SIMPLE_JWT = {

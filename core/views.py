@@ -4,6 +4,8 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 from .languages import SUPPORTED_LANGUAGES
 from rides.models import Ride
@@ -13,6 +15,7 @@ from .serializers import EmergencyAlertCreateSerializer, SavedPlaceSerializer
 class HealthView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         return Response({"status": "ok", "service": "GoSmart API", "version": "v1"})
 
@@ -20,6 +23,7 @@ class HealthView(APIView):
 class LanguagesView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         return Response(
             {
@@ -41,11 +45,13 @@ class SavedPlaceViewSet(viewsets.ModelViewSet):
 
 
 class EmergencyAlertViewSet(viewsets.ModelViewSet):
+    serializer_class = EmergencyAlertCreateSerializer
     http_method_names = ("get", "post", "head", "options")
 
     def get_queryset(self):
         return EmergencyAlert.objects.filter(user=self.request.user)
 
+    @extend_schema(responses={201: OpenApiTypes.OBJECT})
     def create(self, request, *args, **kwargs):
         serializer = EmergencyAlertCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

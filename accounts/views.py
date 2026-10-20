@@ -4,7 +4,9 @@ from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
-from rest_framework import status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -23,6 +25,10 @@ class AuthRegisterView(APIView):
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "auth"
 
+    @extend_schema(
+        request=RegistrationSerializer,
+        responses={201: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -42,6 +48,17 @@ class AuthLoginView(APIView):
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "auth"
 
+    @extend_schema(
+        request=inline_serializer(
+            name="LoginRequest",
+            fields={
+                "email": serializers.EmailField(),
+                "password": serializers.CharField(),
+                "role": serializers.CharField(required=False),
+            },
+        ),
+        responses=OpenApiTypes.OBJECT,
+    )
     def post(self, request):
         email = str(request.data.get("email", "")).strip().lower()
         password = request.data.get("password", "")
@@ -67,9 +84,11 @@ class AuthLoginView(APIView):
 class CurrentUserView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(responses=UserSerializer)
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+    @extend_schema(request=UserSerializer, responses=UserSerializer)
     def patch(self, request):
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -82,6 +101,13 @@ class OtpRequestView(APIView):
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "otp"
 
+    @extend_schema(
+        request=inline_serializer(
+            name="OtpRequest",
+            fields={"phone_number": serializers.CharField()},
+        ),
+        responses={202: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         phone_number = normalize_phone(request.data.get("phone_number", ""))
         now = timezone.now()
@@ -116,6 +142,16 @@ class OtpVerifyView(APIView):
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "otp"
 
+    @extend_schema(
+        request=inline_serializer(
+            name="OtpVerifyRequest",
+            fields={
+                "phone_number": serializers.CharField(),
+                "code": serializers.CharField(),
+            },
+        ),
+        responses=OpenApiTypes.OBJECT,
+    )
     def post(self, request):
         phone_number = normalize_phone(request.data.get("phone_number", ""))
         code = str(request.data.get("code", ""))

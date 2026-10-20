@@ -1,6 +1,8 @@
 
 from django.db import transaction
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -137,6 +139,16 @@ class DriverRequestViewSet(viewsets.ReadOnlyModelViewSet):
 class DriverPreferencesView(APIView):
     permission_classes = (IsAuthenticated, IsDriver)
 
+    @extend_schema(
+        request=inline_serializer(
+            name="DriverPreferencesRequest",
+            fields={
+                "accepts_cash": serializers.BooleanField(required=False),
+                "is_online": serializers.BooleanField(required=False),
+            },
+        ),
+        responses=DriverProfileSerializer,
+    )
     def patch(self, request):
         profile = request.user.driver_profile
         if "accepts_cash" in request.data:
@@ -153,9 +165,11 @@ class DriverPreferencesView(APIView):
 class DriverProfileView(APIView):
     permission_classes = (IsAuthenticated, IsDriverAccount)
 
+    @extend_schema(responses=DriverProfileSerializer)
     def get(self, request):
         return Response(DriverProfileSerializer(request.user.driver_profile).data)
 
+    @extend_schema(request=DriverProfileSerializer, responses=DriverProfileSerializer)
     def patch(self, request):
         serializer = DriverProfileSerializer(
             request.user.driver_profile, data=request.data, partial=True
@@ -180,6 +194,7 @@ class DriverDocumentViewSet(viewsets.ModelViewSet):
 class DriverEarningsView(APIView):
     permission_classes = (IsAuthenticated, IsDriver)
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         driver = request.user.driver_profile
         trips = Ride.objects.filter(driver=driver, status=Ride.Status.COMPLETED)

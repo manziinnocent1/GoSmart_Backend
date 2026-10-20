@@ -4,6 +4,8 @@ from datetime import timedelta
 from django.db.models import Avg, Count, Sum
 from django.http import HttpResponse
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -24,6 +26,7 @@ from core.exceptions import Conflict
 class AdminDashboardView(APIView):
     permission_classes = (IsAuthenticated, IsStaffAdmin)
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         now = timezone.now()
         today = timezone.localdate()
@@ -174,4 +177,3 @@ class AdminSupportTicketViewSet(viewsets.ModelViewSet):
         )
         ticket.save(update_fields=("updated_at",))
         return Response(SupportMessageSerializer(message).data, status=status.HTTP_201_CREATED)
-
